@@ -16,7 +16,7 @@ objectData:
   {{- $rootCtx := .rootCtx -}}
   {{- $objectData := .objectData }}
 ---
-apiVersion: v1
+apiVersion: policy/v1
 kind: poddisruptionbudget
 metadata:
   name: {{ $objectData.name }}
