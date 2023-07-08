@@ -1,17 +1,17 @@
 {{/* poddisruptionbudget Class */}}
 {{/* Call this template:
-{{ include "tc.v1.common.class.poddisruptionbudget" (dict "rootCtx" $ "objectData" $objectData) }}
+{{ include "tc.v1.common.class.podDisruptionBudget" (dict "rootCtx" $ "objectData" $objectData) }}
 
 rootCtx: The root context of the chart.
 objectData:
-  name: The name of the poddisruptionbudget.
-  labels: The labels of the poddisruptionbudget.
-  annotations: The annotations of the poddisruptionbudget.
-  data: The data of the poddisruptionbudget.
-  namespace: The namespace of the poddisruptionbudget. (Optional)
+  name: The name of the podDisruptionBudget.
+  labels: The labels of the podDisruptionBudget.
+  annotations: The annotations of the podDisruptionBudget.
+  data: The data of the podDisruptionBudget.
+  namespace: The namespace of the podDisruptionBudget. (Optional)
 */}}
 
-{{- define "tc.v1.common.class.poddisruptionbudget" -}}
+{{- define "tc.v1.common.class.podDisruptionBudget" -}}
 
   {{- $rootCtx := .rootCtx -}}
   {{- $objectData := .objectData }}
@@ -20,6 +20,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ $objectData.name }}
+  namespace: {{ include "tc.v1.common.lib.metadata.namespace" (dict "rootCtx" $rootCtx "objectData" $objectData "caller" "Pod Disruption Budget") }}
   {{- $labels := (mustMerge ($objectData.labels | default dict) (include "tc.v1.common.lib.metadata.allLabels" $rootCtx | fromYaml)) -}}
   {{- with (include "tc.v1.common.lib.metadata.render" (dict "rootCtx" $rootCtx "labels" $labels) | trim) }}
   labels:
@@ -30,24 +31,21 @@ metadata:
   annotations:
     {{- . | nindent 4 }}
   {{- end -}}
-  {{- with $objectData.namespace }}
-  namespace: {{ tpl . $rootCtx }}
-  {{- end }}
 data:
   selector:
-    {{- if $objectData.selector }}
-    {{- tpl (toYaml $objectData.selector) $ | nindent 4 }}
-    {{- else }}
-    {{- $objectData := dict "targetSelector" $objectData.targetSelector }}
-    {{- $selectedPod := fromYaml ( include "tc.v1.common.lib.helpers.getSelectedPodValues" (dict "rootCtx" $rootCtx "objectData" $objectData)) }}
-    {{- $selectedPodName := $selectedPod.shortName }}
     matchLabels:
-      {{- include "tc.v1.common.lib.metadata.selectorLabels" (dict "rootCtx" $ "objectType" "pod" "objectName" $selectedPodName) | indent 6 }}
-    {{- end }}
-  {{- with $objectData.minAvailable }}
-  minAvailable: {{ . }}
-  {{- end }}
-  {{- with $objectData.maxUnavailable }}
-  maxUnavailable: {{ . }}
-  {{- end }}
+    {{- if $objectData.customLabels -}}
+      {{- with (include "tc.v1.common.lib.metadata.render" (dict "rootCtx" $rootCtx "labels" $objectData.customLabels) | trim) }}
+        {{- . | nindent 6 }}
+      {{- end -}}
+    {{- else }}
+      {{- $selectedPod := fromJson (include "tc.v1.common.lib.helpers.getSelectedPodValues" (dict "rootCtx" $rootCtx "objectData" $objectData)) }}
+      {{- include "tc.v1.common.lib.metadata.selectorLabels" (dict "rootCtx" $ "objectType" "pod" "objectName" $selectedPod.shortName) | nindent 6 }}
+    {{- end -}}
+  {{- if hasKey "minAvailable" $objectData }}
+  minAvailable: {{ $objectData.minAvailable }}
+  {{- end -}}
+  {{- if hasKey "maxUnavailable" $objectData }}
+  maxUnavailable: {{ $objectData.maxUnavailable }}
+  {{- end -}}
 {{- end -}}
