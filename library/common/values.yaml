@@ -527,6 +527,15 @@ route:
               type: PathPrefix
               value: /
 
+podDisruptionBudget:
+  main:
+    enabled: false
+    ## custom selector
+    # selector:
+    targetSelector: main
+    minAvailable: 1
+    maxUnavailable: 1
+
 metrics:
   main:
     enabled: false
